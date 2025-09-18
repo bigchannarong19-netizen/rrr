@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCAS Practice</title>
+    <style>
+         :root {
+            --pink: #f472b6;
+            --blue: #60a5fa;
+            --bg: linear-gradient(135deg, var(--pink) 0%, var(--blue) 100%);
+            --card-bg: #ffffff;
+            --text: #1f2937;
+        }
+        
+        body {
+            font-family: "Segoe UI", sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+        
+        nav a {
+            margin-left: 1rem;
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        nav a:hover {
+            color: var(--blue);
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 700px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        h2,
+        h3,
+        p {
+            color: var(--text);
+        }
+        
+        .btn {
+            background: var(--blue);
+            color: white;
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 0.3rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .option {
+            border: 2px solid #e5e7eb;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 0.5rem 0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .option:hover {
+            background: #f9fafb;
+            border-color: var(--blue);
+        }
+        
+        .correct {
+            background: #d1fae5 !important;
+            border-color: #10b981 !important;
+        }
+        
+        .wrong {
+            background: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem;
+            text-align: center;
+        }
+        
+        th {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 🔹 Navbar -->
+    <header>
+        <div class="logo">📘 TCAS Practice</div>
+        <nav>
+            <a href="#" onclick="goHome()">หน้าหลัก</a>
+            <a href="#" onclick="goIntro()">แนะนำ</a>
+            <a href="#" onclick="backToMenu()">แบบฝึกหัด</a>
+            <a href="#" onclick="goStats()">สถิติ</a>
+            <a href="#" onclick="goAccount()">บัญชีผู้ใช้</a>
+        </nav>
+    </header>
+
+    <main id="app">
+        <div class="card">
+            <h2>เลือกชุดข้อสอบ</h2>
+            <div id="exam-menu"></div>
+        </div>
+    </main>
+
+    <!-- ✅ โหลดข้อสอบจริง -->
+    <script src="examData_full.js"></script>
+
+    <script>
+        const examList = Object.keys(examData);
+        const menu = document.getElementById("exam-menu");
+        menu.innerHTML = examList.map(e =>
+            `<button class="btn" onclick="startExam('${e}')">${e}</button>`
+        ).join("");
+
+        let questions = [];
+        let qIndex = 0,
+            score = 0,
+            currentExam = "";
+
+        function startExam(examName) {
+            currentExam = examName;
+            questions = examData[examName];
+            qIndex = 0;
+            score = 0;
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[qIndex];
+            document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h3>${currentExam} | ข้อที่ ${qIndex+1}/${questions.length}</h3>
+          <p>${q.stem}</p>
+          <div>
+            ${q.choices.map((c,i)=>`<div class="option" onclick="answer(${i})">${c}</div>`).join("")}
+          </div>
+        </div>`;
+    }
+
+    function answer(i) {
+      const q = questions[qIndex];
+      const opts = document.querySelectorAll(".option");
+      opts.forEach((opt,idx)=>{
+        if(idx===q.answer) opt.classList.add("correct");
+        else if(idx===i) opt.classList.add("wrong");
+        opt.onclick=null;
+      });
+      if(i===q.answer) score++;
+      setTimeout(()=>{
+        qIndex++;
+        if(qIndex < questions.length) renderQuestion();
+        else showResult();
+      }, 1000);
+    }
+
+    function showResult() {
+      const percent = ((score/questions.length)*100).toFixed(1);
+      // 🔹 เก็บผลลัพธ์ใน localStorage
+      saveResult(currentExam, score, questions.length, percent);
+      document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h2>ผลลัพธ์ - ${currentExam}</h2>
+          <p>ถูก ${score} จาก ${questions.length} ข้อ (${percent}%)</p>
+          <button class="btn" onclick="backToMenu()">⬅ กลับเมนู</button>
+        </div>`;
+    }
+
+    function backToMenu() {
+      document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h2>เลือกชุดข้อสอบ</h2>
+          <div id="exam-menu">
+            ${examList.map(e => `<button class="btn" onclick="startExam('${e}')">${e}</button>`).join("")}
+          </div>
+        </div>`;
+    }
+
+    // 🔹 บันทึกสถิติ
+    function saveResult(exam, score, total, percent) {
+      const record = {
+        exam, score, total, percent,
+        date: new Date().toLocaleString("th-TH")
+      };
+      let stats = JSON.parse(localStorage.getItem("examStats") || "[]");
+      stats.push(record);
+      localStorage.setItem("examStats", JSON.stringify(stats));
+    }
+
+    // 🔹 แสดงสถิติ
+    function goStats() {
+      const stats = JSON.parse(localStorage.getItem("examStats") || "[]");
+      if (stats.length === 0) {
+        document.getElementById("app").innerHTML = `
+          <div class="card"><h2>📊 สถิติ</h2><p>ยังไม่มีข้อมูลการทำข้อสอบ</p></div>`;
+        return;
+      }
+      document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h2>📊 สถิติการทำข้อสอบ</h2>
+          <table>
+            <tr><th>ชุดข้อสอบ</th><th>คะแนน</th><th>เปอร์เซ็นต์</th><th>วันที่ทำ</th></tr>
+            ${stats.map(r=>`
+              <tr>
+                <td>${r.exam}</td>
+                <td>${r.score}/${r.total}</td>
+                <td>${r.percent}%</td>
+                <td>${r.date}</td>
+              </tr>`).join("")}
+          </table>
+          <button class="btn" onclick="clearStats()">ล้างสถิติ</button>
+        </div>`;
+    }
+
+    function clearStats() {
+      localStorage.removeItem("examStats");
+      goStats();
+    }
+
+    // 🔹 Navbar
+    function goHome() {
+      document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h2>🏠 หน้าหลัก</h2>
+          <p><b>TCAS</b> หรือ <b>Thai University Central Admission System</b> 
+          คือระบบกลางในการคัดเลือกบุคคลเข้าศึกษาต่อในระดับอุดมศึกษา</p>
+        </div>`;
+    }
+    function goIntro() {
+      document.getElementById("app").innerHTML = `
+        <div class="card">
+          <h2>ℹ️ แนะนำ</h2>
+          <p>วิดีโออธิบายระบบ TCAS:</p>
+          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;">
+            <iframe src="https://www.youtube.com/embed/vkKaRAZ-u8E"
+              frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              style="position:absolute;top:0;left:0;width:100%;height:100%;">
+            </iframe>
+          </div>
+        </div>`;
+    }
+
+    // 🔹 Account (เหมือนเดิม)
+    function saveAccount(name, imgUrl) {
+      localStorage.setItem("userName", name);
+      localStorage.setItem("userImg", imgUrl);
+    }
+    function loadAccount() {
+      return { name: localStorage.getItem("userName")||"", img: localStorage.getItem("userImg")||"" };
+    }
+    function goAccount() {
+      const user = loadAccount();
+      if (user.name && user.img) {
+        document.getElementById("app").innerHTML = `
+          <div class="card" style="text-align:center">
+            <img src="${user.img}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
+            <h2>👤 ${user.name}</h2>
+            <button class="btn" onclick="logout()">ออกจากระบบ</button>
+          </div>`;
+      } else {
+        document.getElementById("app").innerHTML = `
+          <div class="card" style="text-align:center">
+            <h2>👤 บัญชีผู้ใช้</h2>
+            <input type="text" id="nameInput" placeholder="กรอกชื่อ" style="padding:0.5rem;width:80%;margin:0.5rem 0;">
+            <input type="file" id="imgInput" accept="image/*" style="margin:0.5rem 0;">
+            <br><button class="btn" onclick="saveProfile()">บันทึก</button>
+          </div>`;
+      }
+    }
+    function saveProfile() {
+      const name = document.getElementById("nameInput").value;
+      const file = document.getElementById("imgInput").files[0];
+      if (!name || !file) { alert("กรุณากรอกชื่อและเลือกรูป"); return; }
+      const reader = new FileReader();
+      reader.onload = e => { saveAccount(name, e.target.result); goAccount(); };
+      reader.readAsDataURL(file);
+    }
+    function logout() { localStorage.removeItem("userName"); localStorage.removeItem("userImg"); goAccount(); }
+    </script>
+</body>
+
+</html>
