@@ -68,7 +68,7 @@
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             width: 100%;
-            max-width: 700px;
+            max-width: 900px;
             animation: fadeIn 0.3s ease;
         }
         
@@ -93,6 +93,37 @@
         
         .btn:hover {
             background: #1d4ed8;
+        }
+        
+        select {
+            padding: 0.5rem;
+            margin: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 0.6rem;
+            text-align: center;
+        }
+        
+        th {
+            background: #f3f4f6;
+        }
+        
+        .study-plan {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 12px;
         }
         
         .option {
@@ -129,23 +160,6 @@
                 transform: translateY(0);
             }
         }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-        
-        th,
-        td {
-            border: 1px solid #e5e7eb;
-            padding: 0.6rem;
-            text-align: center;
-        }
-        
-        th {
-            background: #f3f4f6;
-        }
     </style>
 </head>
 
@@ -158,6 +172,7 @@
             <a href="#" onclick="goIntro()">แนะนำ</a>
             <a href="#" onclick="backToMenu()">แบบฝึกหัด</a>
             <a href="#" onclick="goStats()">สถิติ</a>
+            <a href="#" onclick="goUniversity()">มหาวิทยาลัย</a>
             <a href="#" onclick="goAccount()">บัญชีผู้ใช้</a>
         </nav>
     </header>
@@ -169,10 +184,12 @@
         </div>
     </main>
 
-    <!-- ✅ โหลดข้อสอบจริง -->
+    <!-- ✅ โหลดข้อสอบและข้อมูล TCAS -->
     <script src="examData_full.js"></script>
+    <script src="tcas-data-browser.js"></script>
 
     <script>
+        // ================== แบบฝึกหัด ==================
         const examList = Object.keys(examData);
         const menu = document.getElementById("exam-menu");
         menu.innerHTML = examList.map(e =>
@@ -196,7 +213,7 @@
             const q = questions[qIndex];
             document.getElementById("app").innerHTML = `
         <div class="card">
-          <h3>${currentExam} | ข้อที่ ${qIndex+1}/${questions.length}</h3>
+          <h3>${currentExam} | ข้อที่ ${qIndex + 1}/${questions.length}</h3>
           <p>${q.stem}</p>
           <div>
             ${q.choices.map((c,i)=>`<div class="option" onclick="answer(${i})">${c}</div>`).join("")}
@@ -222,7 +239,6 @@
 
     function showResult() {
       const percent = ((score/questions.length)*100).toFixed(1);
-      // 🔹 เก็บผลลัพธ์ใน localStorage
       saveResult(currentExam, score, questions.length, percent);
       document.getElementById("app").innerHTML = `
         <div class="card">
@@ -242,23 +258,17 @@
         </div>`;
     }
 
-    // 🔹 บันทึกสถิติ
+    // ================== สถิติ ==================
     function saveResult(exam, score, total, percent) {
-      const record = {
-        exam, score, total, percent,
-        date: new Date().toLocaleString("th-TH")
-      };
+      const record = { exam, score, total, percent, date: new Date().toLocaleString("th-TH") };
       let stats = JSON.parse(localStorage.getItem("examStats") || "[]");
       stats.push(record);
       localStorage.setItem("examStats", JSON.stringify(stats));
     }
-
-    // 🔹 แสดงสถิติ
     function goStats() {
       const stats = JSON.parse(localStorage.getItem("examStats") || "[]");
       if (stats.length === 0) {
-        document.getElementById("app").innerHTML = `
-          <div class="card"><h2>📊 สถิติ</h2><p>ยังไม่มีข้อมูลการทำข้อสอบ</p></div>`;
+        document.getElementById("app").innerHTML = `<div class="card"><h2>📊 สถิติ</h2><p>ยังไม่มีข้อมูล</p></div>`;
         return;
       }
       document.getElementById("app").innerHTML = `
@@ -266,61 +276,108 @@
           <h2>📊 สถิติการทำข้อสอบ</h2>
           <table>
             <tr><th>ชุดข้อสอบ</th><th>คะแนน</th><th>เปอร์เซ็นต์</th><th>วันที่ทำ</th></tr>
-            ${stats.map(r=>`
-              <tr>
-                <td>${r.exam}</td>
-                <td>${r.score}/${r.total}</td>
-                <td>${r.percent}%</td>
-                <td>${r.date}</td>
-              </tr>`).join("")}
+            ${stats.map(r=>`<tr><td>${r.exam}</td><td>${r.score}/${r.total}</td><td>${r.percent}%</td><td>${r.date}</td></tr>`).join("")}
           </table>
           <button class="btn" onclick="clearStats()">ล้างสถิติ</button>
         </div>`;
     }
+    function clearStats() { localStorage.removeItem("examStats"); goStats(); }
 
-    function clearStats() {
-      localStorage.removeItem("examStats");
-      goStats();
-    }
-
-    // 🔹 Navbar
-    function goHome() {
+    // ================== มหาวิทยาลัย ==================
+    function goUniversity() {
       document.getElementById("app").innerHTML = `
         <div class="card">
-          <h2>🏠 หน้าหลัก</h2>
-          <p><b>TCAS</b> หรือ <b>Thai University Central Admission System</b> 
-          คือระบบกลางในการคัดเลือกบุคคลเข้าศึกษาต่อในระดับอุดมศึกษา</p>
+          <h2>🎓 เลือกมหาวิทยาลัยและคณะ</h2>
+          <label>มหาวิทยาลัย:</label>
+          <select id="uniSelect" onchange="loadFaculties()">
+            <option value="">-- เลือกมหาวิทยาลัย --</option>
+            ${tcasData.universities.map(u => `<option value="${u.id}">${u.name}</option>`).join("")}
+          </select>
+          <label>คณะ:</label>
+          <select id="facultySelect" onchange="showUniversityInfo()"><option value="">-- เลือกคณะ --</option></select>
+          <div id="uniInfo"></div>
         </div>`;
+    }
+
+    function loadFaculties() {
+      const uniId = document.getElementById("uniSelect").value;
+      const facSel = document.getElementById("facultySelect");
+      facSel.innerHTML = `<option value="">-- เลือกคณะ --</option>`;
+      if (uniId) {
+        const uni = tcasData.universities.find(u => u.id == uniId);
+        uni.faculties.forEach(f => {
+          facSel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
+        });
+      }
+      document.getElementById("uniInfo").innerHTML = "";
+    }
+
+    function showUniversityInfo() {
+      const uniId = document.getElementById("uniSelect").value;
+      const facId = document.getElementById("facultySelect").value;
+
+      const uni = tcasData.universities.find(u => u.id == uniId);
+      const fac = uni.faculties.find(f => f.id == facId);
+
+      if (!fac) return;
+
+      const safeList = arr => arr.map(r => `<li>${r.name || r}</li>`).join("");
+
+      let html = `<h3>${uni.name} - ${fac.name}</h3>`;
+      if (fac.rounds) {
+        html += `<h4>รอบที่เปิดรับ</h4><ul>${safeList(fac.rounds)}</ul>`;
+      }
+      if (fac.requirements) {
+        html += `<h4>วิชาที่ใช้</h4><ul>${safeList(fac.requirements)}</ul>`;
+      }
+      if (fac.schedule) {
+        html += `<h4>กำหนดการ</h4>
+          <table>
+            <tr><th>เริ่ม</th><th>สิ้นสุด</th><th>ประกาศผล</th><th>ยืนยันสิทธิ์</th><th>สละสิทธิ์</th></tr>
+            <tr>
+              <td>${fac.schedule.start || "-"}</td>
+              <td>${fac.schedule.end || "-"}</td>
+              <td>${fac.schedule.result || "-"}</td>
+              <td>${fac.schedule.confirm || "-"}</td>
+              <td>${fac.schedule.withdraw || "-"}</td>
+            </tr>
+          </table>`;
+      }
+      document.getElementById("uniInfo").innerHTML = html;
+    }
+
+    // ================== Navbar อื่นๆ ==================
+    function goHome() {
+      document.getElementById("app").innerHTML =
+        `<div class="card"><h2>🏠 หน้าหลัก</h2><p>ระบบ TCAS คือการคัดเลือกเข้ามหาวิทยาลัยกลางของไทย</p></div>`;
     }
     function goIntro() {
-      document.getElementById("app").innerHTML = `
-        <div class="card">
-          <h2>ℹ️ แนะนำ</h2>
-          <p>วิดีโออธิบายระบบ TCAS:</p>
-          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;">
-            <iframe src="https://www.youtube.com/embed/vkKaRAZ-u8E"
-              frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              style="position:absolute;top:0;left:0;width:100%;height:100%;">
-            </iframe>
-          </div>
-        </div>`;
+      document.getElementById("app").innerHTML =
+        `<div class="card"><h2>ℹ️ แนะนำ</h2><p>ดูวิดีโออธิบายระบบ TCAS</p>
+         <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;">
+         <iframe src="https://www.youtube.com/embed/vkKaRAZ-u8E" frameborder="0" allowfullscreen
+         style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe></div></div>`;
     }
 
-    // 🔹 Account (เหมือนเดิม)
+    // ================== บัญชีผู้ใช้ ==================
     function saveAccount(name, imgUrl) {
       localStorage.setItem("userName", name);
       localStorage.setItem("userImg", imgUrl);
     }
+
     function loadAccount() {
-      return { name: localStorage.getItem("userName")||"", img: localStorage.getItem("userImg")||"" };
+      return {
+        name: localStorage.getItem("userName") || "",
+        img: localStorage.getItem("userImg") || ""
+      };
     }
+
     function goAccount() {
       const user = loadAccount();
       if (user.name && user.img) {
         document.getElementById("app").innerHTML = `
           <div class="card" style="text-align:center">
-            <img src="${user.img}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
+            <img src="${user.img}" alt="profile" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:1rem;">
             <h2>👤 ${user.name}</h2>
             <button class="btn" onclick="logout()">ออกจากระบบ</button>
           </div>`;
@@ -330,19 +387,32 @@
             <h2>👤 บัญชีผู้ใช้</h2>
             <input type="text" id="nameInput" placeholder="กรอกชื่อ" style="padding:0.5rem;width:80%;margin:0.5rem 0;">
             <input type="file" id="imgInput" accept="image/*" style="margin:0.5rem 0;">
-            <br><button class="btn" onclick="saveProfile()">บันทึก</button>
+            <br>
+            <button class="btn" onclick="saveProfile()">บันทึก</button>
           </div>`;
       }
     }
+
     function saveProfile() {
       const name = document.getElementById("nameInput").value;
       const file = document.getElementById("imgInput").files[0];
-      if (!name || !file) { alert("กรุณากรอกชื่อและเลือกรูป"); return; }
+      if (!name || !file) {
+        alert("กรุณากรอกชื่อและเลือกรูป");
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = e => { saveAccount(name, e.target.result); goAccount(); };
+      reader.onload = function(e) {
+        saveAccount(name, e.target.result);
+        goAccount();
+      };
       reader.readAsDataURL(file);
     }
-    function logout() { localStorage.removeItem("userName"); localStorage.removeItem("userImg"); goAccount(); }
+
+    function logout() {
+      localStorage.removeItem("userName");
+      localStorage.removeItem("userImg");
+      goAccount();
+    }
     </script>
 </body>
 
